@@ -46,6 +46,12 @@ export const AppointmentProvider = ({ children }) => {
     );
   }, []);
 
+  const cancelAppointment = useCallback((appointmentId) => {
+    setAppointments((prev) =>
+      prev.filter((apt) => apt.id !== appointmentId)
+    );
+  }, []);
+
   const getUpcomingAppointments = useCallback(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -125,6 +131,7 @@ export const AppointmentProvider = ({ children }) => {
         sessions,
         addAppointment,
         updateAppointmentStatus,
+        cancelAppointment,
         getUpcomingAppointments,
         getVideoConsultations,
         createSession,

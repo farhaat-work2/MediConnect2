@@ -1,16 +1,29 @@
 import { useState } from "react";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
-import { Video, User, Calendar, Clock, AlertCircle } from "lucide-react";
+import { Video, User, Calendar, Clock, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog.jsx";
+import { toast } from "sonner";
 import VideoCallUI from "@/components/video/VideoCallUI.jsx";
 import { useAppointments } from "@/context/AppointmentContext.jsx";
 
 const PatientVideoConsultation = () => {
-  const { getVideoConsultations, updateAppointmentStatus, createSession, getSessionByAppointment } = useAppointments();
+  const { getVideoConsultations, updateAppointmentStatus, cancelAppointment, createSession, getSessionByAppointment } = useAppointments();
   const [inCall, setInCall] = useState(false);
   const [activeConsultation, setActiveConsultation] = useState(null);
   const [isWaitingRoom, setIsWaitingRoom] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   const videoConsultations = getVideoConsultations();
 
@@ -72,6 +85,20 @@ const PatientVideoConsultation = () => {
 
   const handleMarkComplete = (appointmentId) => {
     updateAppointmentStatus(appointmentId, "Completed");
+  };
+
+  const handleCancelClick = (apt) => {
+    setSelectedAppointment(apt);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    if (selectedAppointment) {
+      cancelAppointment(selectedAppointment.id);
+      toast.success("Appointment cancelled successfully.");
+    }
+    setCancelDialogOpen(false);
+    setSelectedAppointment(null);
   };
 
   if (inCall && activeConsultation) {
@@ -193,6 +220,15 @@ const PatientVideoConsultation = () => {
                               You'll wait until doctor joins
                             </p>
                           )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleCancelClick(apt)}
+                            className="w-full lg:w-auto gap-2"
+                          >
+                            <X className="w-4 h-4" />
+                            Cancel Appointment
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -239,6 +275,26 @@ const PatientVideoConsultation = () => {
         </div>
       </main>
       <Footer />
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this appointment? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

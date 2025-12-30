@@ -1,7 +1,36 @@
-import { Video, Calendar, Clock, User, AlertCircle, CheckCircle } from "lucide-react";
+import { useState } from "react";
+import { Video, Calendar, Clock, User, AlertCircle, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog.jsx";
+import { toast } from "sonner";
 
-const DoctorVideoConsultations = ({ consultations, onStartCall }) => {
+const DoctorVideoConsultations = ({ consultations, onStartCall, onCancelAppointment }) => {
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+  const handleCancelClick = (apt) => {
+    setSelectedAppointment(apt);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    if (selectedAppointment && onCancelAppointment) {
+      onCancelAppointment(selectedAppointment.id);
+      toast.success("Appointment cancelled successfully.");
+    }
+    setCancelDialogOpen(false);
+    setSelectedAppointment(null);
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -47,83 +76,116 @@ const DoctorVideoConsultations = ({ consultations, onStartCall }) => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="space-y-4">
-        {consultations.map((apt) => {
-          const timeStatus = getTimeStatus(apt);
-          
-          return (
-            <div
-              key={apt.id}
-              className="bg-card rounded-2xl shadow-soft border border-border/50 p-6 hover:shadow-elevated transition-all duration-300"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <span className="text-xs font-medium bg-primary-light text-primary px-2 py-1 rounded-full">
-                      {apt.id}
-                    </span>
-                    <span className="text-xs font-medium bg-purple-100 text-purple-700 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Video className="w-3 h-3" />
-                      Video
-                    </span>
-                    {apt.status === "Completed" ? (
-                      <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" />
-                        Completed
+    <>
+      <div className="max-w-3xl mx-auto">
+        <div className="space-y-4">
+          {consultations.map((apt) => {
+            const timeStatus = getTimeStatus(apt);
+            
+            return (
+              <div
+                key={apt.id}
+                className="bg-card rounded-2xl shadow-soft border border-border/50 p-6 hover:shadow-elevated transition-all duration-300"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <span className="text-xs font-medium bg-primary-light text-primary px-2 py-1 rounded-full">
+                        {apt.id}
                       </span>
-                    ) : (
-                      <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                        {apt.status}
+                      <span className="text-xs font-medium bg-purple-100 text-purple-700 px-2 py-1 rounded-full flex items-center gap-1">
+                        <Video className="w-3 h-3" />
+                        Video
                       </span>
-                    )}
-                    {timeStatus && (
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${timeStatus.color}`}>
-                        {timeStatus.label}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="w-4 h-4 text-primary" />
-                        <span className="font-semibold text-foreground">{apt.patientName}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground pl-6">
-                        {apt.email} • Age: {apt.age}
-                      </p>
+                      {apt.status === "Completed" ? (
+                        <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Completed
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                          {apt.status}
+                        </span>
+                      )}
+                      {timeStatus && (
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${timeStatus.color}`}>
+                          {timeStatus.label}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        <span className="text-foreground">{formatDate(apt.appointmentDate)}</span>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="w-4 h-4 text-primary" />
+                          <span className="font-semibold text-foreground">{apt.patientName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground pl-6">
+                          {apt.email} • Age: {apt.age}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2 text-sm pl-6">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{apt.appointmentTime}</span>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="w-4 h-4 text-primary" />
+                          <span className="text-foreground">{formatDate(apt.appointmentDate)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm pl-6">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{apt.appointmentTime}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="lg:border-l lg:border-border lg:pl-4">
-                  <Button 
-                    onClick={() => onStartCall(apt)}
-                    className="w-full lg:w-auto gap-2"
-                    disabled={apt.status === "Completed"}
-                  >
-                    <Video className="w-4 h-4" />
-                    {apt.status === "Completed" ? "Completed" : "Start Call"}
-                  </Button>
+                  <div className="lg:border-l lg:border-border lg:pl-4 flex flex-col gap-2">
+                    <Button 
+                      onClick={() => onStartCall(apt)}
+                      className="w-full lg:w-auto gap-2"
+                      disabled={apt.status === "Completed"}
+                    >
+                      <Video className="w-4 h-4" />
+                      {apt.status === "Completed" ? "Completed" : "Start Call"}
+                    </Button>
+                    {apt.status !== "Completed" && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleCancelClick(apt)}
+                        className="w-full lg:w-auto gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Cancel Appointment
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this appointment? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
