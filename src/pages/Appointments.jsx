@@ -26,7 +26,7 @@ const initialFormState = {
 };
 
 const Appointments = () => {
-  const { addAppointment, getUpcomingAppointments } = useAppointments();
+  const { addAppointment, getUpcomingAppointments, cancelAppointment } = useAppointments();
   const { notifyAppointmentBooked } = useNotifications();
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
@@ -231,7 +231,10 @@ const Appointments = () => {
               />
             )
           ) : (
-            <MyAppointments appointments={upcomingAppointments} />
+            <MyAppointments 
+              appointments={upcomingAppointments} 
+              onCancelAppointment={cancelAppointment}
+            />
           )}
         </div>
       </main>
