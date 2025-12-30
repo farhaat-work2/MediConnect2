@@ -225,16 +225,61 @@ export class WebRTCConnection {
     return false;
   }
 
-  // Toggle video track
-  toggleVideo(enabled) {
-    if (this.localStream) {
-      this.localStream.getVideoTracks().forEach(track => {
-        track.enabled = enabled;
-        console.log('[WebRTC] Video track enabled:', enabled);
-      });
-      return true;
+  // Toggle video track - handles re-acquiring camera if track was stopped
+  async toggleVideo(enabled) {
+    if (!this.localStream) return false;
+
+    const videoTrack = this.localStream.getVideoTracks()[0];
+
+    if (!enabled) {
+      // Simply disable the track
+      if (videoTrack) {
+        videoTrack.enabled = false;
+        console.log('[WebRTC] Video track disabled');
+      }
+      return { success: true, stream: this.localStream };
     }
-    return false;
+
+    // Enabling video - check if track exists and is still live
+    if (videoTrack && videoTrack.readyState === 'live') {
+      videoTrack.enabled = true;
+      console.log('[WebRTC] Video track re-enabled');
+      return { success: true, stream: this.localStream };
+    }
+
+    // Track was stopped or doesn't exist - need to re-acquire camera
+    console.log('[WebRTC] Video track ended, re-acquiring camera...');
+    
+    try {
+      const newVideoStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+
+      const newVideoTrack = newVideoStream.getVideoTracks()[0];
+      console.log('[WebRTC] New video track acquired');
+
+      // Replace the track in the peer connection sender
+      const sender = this.peerConnection?.getSenders().find(s => s.track?.kind === 'video' || s.track === null);
+      if (sender) {
+        await sender.replaceTrack(newVideoTrack);
+        console.log('[WebRTC] Replaced video track in sender');
+      }
+
+      // Remove old video track from local stream and add new one
+      if (videoTrack) {
+        this.localStream.removeTrack(videoTrack);
+      }
+      this.localStream.addTrack(newVideoTrack);
+
+      return { success: true, stream: this.localStream };
+    } catch (err) {
+      console.error('[WebRTC] Error re-acquiring video:', err);
+      return { success: false, stream: this.localStream };
+    }
   }
 
   close() {
